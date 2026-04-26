@@ -1,0 +1,50 @@
+name: uptime
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_notify:
+        description: 'Send a test notification even if no state change'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore previous state
+        uses: actions/cache/restore@v4
+        with:
+          path: .state.json
+          key: uptime-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            uptime-state-
+
+      - name: Run uptime check
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+          TEST_NOTIFY: ${{ inputs.test_notify }}
+        run: |
+          if [ "$TEST_NOTIFY" = "true" ]; then
+            python3 check.py --test-notify
+          else
+            python3 check.py
+          fi
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .state.json
+          key: uptime-state-${{ github.run_id }}-${{ github.run_attempt }}

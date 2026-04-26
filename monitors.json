@@ -1,0 +1,14 @@
+[
+  {"name": "bengoshi-map",            "url": "https://bengoshimap.com",                                              "expect": [200]},
+  {"name": "ma-navi",                 "url": "https://ma-navi-sooty.vercel.app",                                     "expect": [200]},
+  {"name": "hakajimai-navi",          "url": "https://hakajimai-navi.vercel.app",                                    "expect": [200]},
+  {"name": "live-monitor-frontend",   "url": "https://live-monitor-app.netlify.app",                                 "expect": [200]},
+  {"name": "live-monitor-cloud-run",  "url": "https://live-monitor-761384566628.asia-northeast1.run.app",            "expect": [200, 404]},
+  {"name": "clipfinder",              "url": "https://clipfinder-five.vercel.app",                                   "expect": [200]},
+  {"name": "dubify",                  "url": "https://dubify.xyz",                                                   "expect": [200]},
+  {"name": "dubify-api-railway",      "url": "https://audio-splitter-api-production.up.railway.app",                 "expect": [200, 404]},
+  {"name": "core-ms.net",             "url": "https://core-ms.net",                                                  "expect": [200]},
+  {"name": "cocorondo-bot",           "url": "https://cocorondo-bot-oyz6y6u4sa-an.a.run.app",                        "expect": [200, 404]},
+  {"name": "ringside.buzz",           "url": "https://ringside.buzz",                                                "expect": [200]},
+  {"name": "music-school",            "url": "https://music-school-livid.vercel.app",                                "expect": [200, 307]}
+]
