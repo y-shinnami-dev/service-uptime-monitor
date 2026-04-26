@@ -9,6 +9,7 @@ occur (up→down or down→up).
 import json
 import os
 import sys
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
@@ -24,24 +25,40 @@ REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 MONITORS_PATH = os.path.join(REPO_DIR, "monitors.json")
 STATE_PATH = os.path.join(REPO_DIR, ".state.json")
 TIMEOUT = 15
+RETRY_BACKOFF = 3
+MAX_ATTEMPTS = 2
 JST = timezone(timedelta(hours=9))
+
+
+def _probe(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "service-uptime-monitor/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            return resp.status, None
+    except urllib.error.HTTPError as e:
+        return e.code, None
+    except Exception as e:
+        return None, str(e)
 
 
 def check_one(monitor):
     name = monitor["name"]
     url = monitor["url"]
     expected = set(monitor.get("expect", [200]))
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "service-uptime-monitor/1.0"})
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            code = resp.status
-    except urllib.error.HTTPError as e:
-        code = e.code
-    except Exception as e:
-        return name, url, None, False, str(e)
-    is_up = code in expected
-    err = None if is_up else f"unexpected status {code}"
-    return name, url, code, is_up, err
+    code, err_msg = None, None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        code, err_msg = _probe(url)
+        is_up = code in expected
+        if is_up:
+            if attempt > 1:
+                print(f"  ↻ {name} recovered on attempt {attempt}", file=sys.stderr)
+            return name, url, code, True, None
+        if attempt < MAX_ATTEMPTS:
+            print(f"  ↻ {name} attempt {attempt} failed (code={code} err={err_msg}), retrying in {RETRY_BACKOFF}s", file=sys.stderr)
+            time.sleep(RETRY_BACKOFF)
+    if code is None:
+        return name, url, None, False, err_msg
+    return name, url, code, False, f"unexpected status {code}"
 
 
 def load_json(path, default):
