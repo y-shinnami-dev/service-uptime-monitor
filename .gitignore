@@ -1,4 +1,5 @@
 .state.json
+.deep_state.json
 __pycache__/
 *.pyc
 .env
