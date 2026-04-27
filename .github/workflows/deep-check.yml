@@ -1,0 +1,61 @@
+name: deep-check
+on:
+  schedule:
+    # 毎日 06:00 JST = 21:00 UTC（前日）と 18:00 JST = 09:00 UTC の2回
+    - cron: '0 21 * * *'
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      test_notify:
+        description: 'Send test notification regardless of state'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deep-check
+  cancel-in-progress: false
+
+jobs:
+  deep-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore previous state
+        uses: actions/cache/restore@v4
+        with:
+          path: .deep_state.json
+          key: deep-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            deep-state-
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Run deep check
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+          TEST_NOTIFY: ${{ inputs.test_notify }}
+        run: |
+          if [ "$TEST_NOTIFY" = "true" ]; then
+            python3 deep_check.py --test-notify
+          else
+            python3 deep_check.py
+          fi
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .deep_state.json
+          key: deep-state-${{ github.run_id }}-${{ github.run_attempt }}

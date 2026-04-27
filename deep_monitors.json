@@ -1,0 +1,30 @@
+{
+  "default_rules": {
+    "min_main_height": 800,
+    "min_body_text": 600,
+    "max_hidden_sections": 0,
+    "ignore_console_patterns": [
+      "Failed to load resource",
+      "favicon.ico",
+      "Tracking Prevention",
+      "ERR_BLOCKED_BY_CLIENT"
+    ]
+  },
+  "targets": [
+    { "site": "core-ms",  "url": "https://core-ms.net/",                "label": "TOP" },
+    { "site": "core-ms",  "url": "https://core-ms.net/vocal/",          "label": "vocal" },
+    { "site": "core-ms",  "url": "https://core-ms.net/guitar/",         "label": "guitar" },
+    { "site": "core-ms",  "url": "https://core-ms.net/bass/",           "label": "bass" },
+    { "site": "core-ms",  "url": "https://core-ms.net/drum/",           "label": "drum" },
+    { "site": "core-ms",  "url": "https://core-ms.net/flute/",          "label": "flute" },
+    { "site": "core-ms",  "url": "https://core-ms.net/ukulele/",        "label": "ukulele" },
+    { "site": "core-ms",  "url": "https://core-ms.net/piano/",          "label": "piano" },
+    { "site": "core-ms",  "url": "https://core-ms.net/dtm-skill/",      "label": "dtm-skill" },
+    { "site": "core-ms",  "url": "https://core-ms.net/school/",         "label": "school" },
+    { "site": "core-ms",  "url": "https://core-ms.net/trainer/",        "label": "trainer" },
+    { "site": "core-ms",  "url": "https://core-ms.net/contact/",        "label": "contact",         "rules": { "must_have_form": true } },
+    { "site": "core-ms",  "url": "https://core-ms.net/free-experience/","label": "free-experience", "rules": { "must_have_form": true, "must_have_text": ["お申し込み", "wpcf7"] } },
+    { "site": "core-ms",  "url": "https://core-ms.net/lesson/",         "label": "lesson" },
+    { "site": "core-ms",  "url": "https://core-ms.net/category/topics/","label": "topics" }
+  ]
+}
