@@ -1,8 +1,8 @@
 name: deep-check
 on:
   schedule:
-    # 毎日 06:00 JST = 21:00 UTC（前日）と 18:00 JST = 09:00 UTC の2回
-    - cron: '0 21 * * *'
+    # 毎日 10:00 JST = 01:00 UTC と 18:00 JST = 09:00 UTC の2回
+    - cron: '0 1 * * *'
     - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
