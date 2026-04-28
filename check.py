@@ -27,6 +27,11 @@ STATE_PATH = os.path.join(REPO_DIR, ".state.json")
 TIMEOUT = 15
 RETRY_BACKOFF = 3
 MAX_ATTEMPTS = 2
+# Number of CONSECUTIVE failed runs required before flipping a service to "down"
+# and posting an alert. Suppresses single-point flaps (e.g., 30s blips on
+# Lolipop shared hosting) without slowing genuine outage detection more than
+# one cron interval (~5min).
+CONSEC_FAIL_THRESHOLD = 2
 JST = timezone(timedelta(hours=9))
 
 
@@ -91,25 +96,39 @@ def post_slack(webhook, text):
         return None
 
 
+def _normalize_prev(raw):
+    """Migrate old state format ({name: 'up'|'down'}) to new
+    ({name: {'status': ..., 'fail_streak': N}})."""
+    out = {}
+    for name, val in (raw or {}).items():
+        if isinstance(val, dict):
+            out[name] = {
+                "status": val.get("status", "up"),
+                "fail_streak": int(val.get("fail_streak", 0)),
+            }
+        else:
+            out[name] = {"status": val, "fail_streak": 0}
+    return out
+
+
 def main():
     webhook = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
     monitors = load_json(MONITORS_PATH, [])
-    prev_state = load_json(STATE_PATH, {})
+    prev_state = _normalize_prev(load_json(STATE_PATH, {}))
     test_notify = "--test-notify" in sys.argv
 
     now_jst = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S JST")
     print("=== Service Uptime Check ===")
     print(f"実行: {now_jst}")
     print(f"監視対象: {len(monitors)} services")
+    print(f"連続失敗しきい値: {CONSEC_FAIL_THRESHOLD} runs")
 
-    new_state = {}
     results = {}
     with ThreadPoolExecutor(max_workers=10) as ex:
         futures = {ex.submit(check_one, m): m for m in monitors}
         for fut in as_completed(futures):
             name, url, code, is_up, err = fut.result()
             results[name] = (url, code, is_up, err)
-            new_state[name] = "up" if is_up else "down"
 
     for name in sorted(results):
         url, code, is_up, err = results[name]
@@ -119,14 +138,30 @@ def main():
 
     new_down = []
     recovered = []
-    for name, status in new_state.items():
-        prev = prev_state.get(name, "up")
-        if prev == "up" and status == "down":
-            url, code, _, err = results[name]
-            new_down.append((name, url, code, err))
-        elif prev == "down" and status == "up":
-            url, code, _, _ = results[name]
-            recovered.append((name, url, code))
+    new_state = {}
+    for name, (url, code, is_up, err) in results.items():
+        prev = prev_state.get(name, {"status": "up", "fail_streak": 0})
+        prev_status = prev["status"]
+        prev_streak = prev["fail_streak"]
+
+        if is_up:
+            new_status = "up"
+            new_streak = 0
+            if prev_status == "down":
+                recovered.append((name, url, code))
+        else:
+            new_streak = prev_streak + 1
+            if prev_status == "up":
+                if new_streak >= CONSEC_FAIL_THRESHOLD:
+                    new_status = "down"
+                    new_down.append((name, url, code, err))
+                else:
+                    new_status = "up"  # still tentative — suppress alert
+                    print(f"  ⚠ {name} failed (streak {new_streak}/{CONSEC_FAIL_THRESHOLD}) — not yet alerting")
+            else:
+                new_status = "down"
+
+        new_state[name] = {"status": new_status, "fail_streak": new_streak}
 
     save_state(new_state)
 
