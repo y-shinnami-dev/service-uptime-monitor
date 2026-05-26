@@ -1,0 +1,32 @@
+name: gcp-billing-check
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 10:00 JST daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gcp-billing-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_BILLING_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Check GCP billing health
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+        run: python3 gcp_billing_check.py
