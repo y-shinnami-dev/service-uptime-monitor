@@ -1,0 +1,27 @@
+# GitHub disables scheduled workflows after 60 days without repository activity
+# (workflow runs do NOT count - only commits do). This repo is set-and-forget, so
+# uptime/deep-check were silently disabled on 2026-07-25/26 after 64 idle days.
+# This job commits a timestamp twice a month to keep the activity clock reset.
+name: keepalive
+
+on:
+  schedule:
+    - cron: "5 20 1,15 * *"  # 1st & 15th, 20:05 UTC = 05:05 JST next day
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  touch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit heartbeat
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --only .keepalive -m "chore: keepalive heartbeat [skip ci]" || exit 0
+          git push
