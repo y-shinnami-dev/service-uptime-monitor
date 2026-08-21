@@ -41,16 +41,24 @@ def save_state(state):
 
 
 def slack_notify(webhook, text):
-    if not webhook:
-        print("(no SLACK_WEBHOOK_URL set; would have sent: " + text + ")")
+    """Slack + Google Chat 併送（Slack→Chat移行の並行期間・2026-08-21〜）"""
+    targets = []
+    if webhook:
+        targets.append(("slack", webhook))
+    chat = os.environ.get("CHAT_WEBHOOK_URL", "").strip()
+    if chat:
+        targets.append(("chat", chat))
+    if not targets:
+        print("(no webhook set; would have sent: " + text + ")")
         return
     body = json.dumps({"text": text}).encode("utf-8")
-    req = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            r.read()
-    except Exception as e:
-        print(f"slack send failed: {e}")
+    for label, url in targets:
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                r.read()
+        except Exception as e:
+            print(f"{label} send failed: {e}")
 
 
 PROBE_JS = """() => {

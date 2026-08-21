@@ -81,10 +81,10 @@ def save_state(state):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
-def post_slack(webhook, text):
+def _post_webhook(url, text, label):
     data = json.dumps({"text": text}).encode("utf-8")
     req = urllib.request.Request(
-        webhook,
+        url,
         data=data,
         headers={"Content-Type": "application/json; charset=utf-8"},
     )
@@ -92,8 +92,18 @@ def post_slack(webhook, text):
         with urllib.request.urlopen(req, timeout=10) as resp:
             return resp.status
     except Exception as e:
-        print(f"Slack post failed: {e}", file=sys.stderr)
+        print(f"{label} post failed: {e}", file=sys.stderr)
         return None
+
+
+def post_slack(webhook, text):
+    """Slack + Google Chat 併送（Slack→Chat移行の並行期間・2026-08-21〜）。
+    どちらも {"text": ...} を受ける。CHAT_WEBHOOK_URL 未設定なら Slack のみ。"""
+    status = _post_webhook(webhook, text, "Slack")
+    chat = os.environ.get("CHAT_WEBHOOK_URL", "").strip()
+    if chat:
+        _post_webhook(chat, text, "Chat")
+    return status
 
 
 def _normalize_prev(raw):

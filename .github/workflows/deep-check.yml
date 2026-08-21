@@ -44,6 +44,7 @@ jobs:
       - name: Run deep check
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+          CHAT_WEBHOOK_URL: ${{ secrets.CHAT_ALERTS_WEBHOOK_URL }}
           TEST_NOTIFY: ${{ inputs.test_notify }}
         run: |
           if [ "$TEST_NOTIFY" = "true" ]; then
