@@ -43,7 +43,7 @@ jobs:
 
       - name: Run deep check
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERTS_WEBHOOK_URL }}
+          # Slack併送は2026-08-26に終了（ユーザー確認済み）。通知は Google Chat #Alert のみ。
           CHAT_WEBHOOK_URL: ${{ secrets.CHAT_ALERTS_WEBHOOK_URL }}
           TEST_NOTIFY: ${{ inputs.test_notify }}
         run: |

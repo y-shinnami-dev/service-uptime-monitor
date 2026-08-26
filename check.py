@@ -97,9 +97,11 @@ def _post_webhook(url, text, label):
 
 
 def post_slack(webhook, text):
-    """Slack + Google Chat 併送（Slack→Chat移行の並行期間・2026-08-21〜）。
-    どちらも {"text": ...} を受ける。CHAT_WEBHOOK_URL 未設定なら Slack のみ。"""
-    status = _post_webhook(webhook, text, "Slack")
+    """Slack / Google Chat へ送る。どちらも {"text": ...} を受ける。
+    Slack併送は2026-08-26に終了（webhook未設定=Chatのみが通常運用）。"""
+    status = None
+    if webhook:
+        status = _post_webhook(webhook, text, "Slack")
     chat = os.environ.get("CHAT_WEBHOOK_URL", "").strip()
     if chat:
         _post_webhook(chat, text, "Chat")
@@ -182,8 +184,8 @@ def main():
         print("変化なし。Slack通知はスキップ")
         return 0
 
-    if not webhook:
-        print("WARN: SLACK_WEBHOOK_URL not set — skipping notification", file=sys.stderr)
+    if not webhook and not os.environ.get("CHAT_WEBHOOK_URL", "").strip():
+        print("WARN: no webhook set (SLACK_WEBHOOK_URL / CHAT_WEBHOOK_URL) — skipping notification", file=sys.stderr)
         return 0
 
     lines = []
