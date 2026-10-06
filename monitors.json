@@ -107,5 +107,12 @@
     "expect": [
       200
     ]
+  },
+  {
+    "name": "kumeru",
+    "url": "https://kumu-pied.vercel.app",
+    "expect": [
+      200
+    ]
   }
 ]
