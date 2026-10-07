@@ -114,5 +114,12 @@
     "expect": [
       200
     ]
+  },
+  {
+    "name": "tsukuwear",
+    "url": "https://tsukuwear.com",
+    "expect": [
+      200
+    ]
   }
 ]
